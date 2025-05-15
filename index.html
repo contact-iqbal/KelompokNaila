@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game TTS Interaktif</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #00c6ff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0072ff;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="soal">Selamat datang di Game TTS Interaktif!</h1>
+    <input type="text" id="jawaban" placeholder="Tulis jawabanmu di sini" class="hidden">
+    <button onclick="mulaiGame()" id="btnMulai">Mulai</button>
+    <button onclick="cekJawaban()" class="hidden" id="btnCek">Jawab</button>
+    <p id="feedback"></p>
+  </div>
+
+  <script>
+    const soalList = [
+      "Guna Kata konkret dalam ranah bahasa adalah",
+      "Mengapa Kata konkret harus memiliki bentuk fisik?",
+      "Kaca merupakan Kata konkret bagian...",
+      "Kata konkret merupakan kata yang mencakup ciri khas yang dapat dilihat, didengar, dirasakan, dicium Dan dikecap, berdasarkan fakta yang tertera, Kata konkret memiliki wujud ..."
+    ];
+
+    const jawabanList = [
+      "mendeskripsikan objek nyata",
+      "agar dapat dibuktikan keberadaannya",
+      "benda",
+      "nyata"
+    ];
+
+    let indexSoal = 0;
+
+    function mulaiGame() {
+      document.getElementById('btnMulai').classList.add('hidden');
+      document.getElementById('jawaban').classList.remove('hidden');
+      document.getElementById('btnCek').classList.remove('hidden');
+      tampilkanSoal();
+    }
+
+    function tampilkanSoal() {
+      document.getElementById('soal').innerText = soalList[indexSoal];
+      document.getElementById('jawaban').value = '';
+      document.getElementById('feedback').innerText = '';
+    }
+
+    function cekJawaban() {
+      const input = document.getElementById('jawaban').value.toLowerCase().trim();
+      if (input === jawabanList[indexSoal]) {
+        indexSoal++;
+        if (indexSoal < soalList.length) {
+          tampilkanSoal();
+        } else {
+          document.getElementById('soal').innerText = 'Selamat! Kamu telah menyelesaikan semua rintangan!';
+          document.getElementById('jawaban').classList.add('hidden');
+          document.getElementById('btnCek').classList.add('hidden');
+        }
+      } else {
+        document.getElementById('feedback').innerText = 'Jawaban salah, coba lagi!';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,113 +1,328 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game TTS Interaktif</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tebak Kata - Game Edukatif</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #4e54c8, #8f94fb);
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
       margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
     .container {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 40px;
       max-width: 600px;
-      width: 90%;
+      background: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       text-align: center;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      position: relative;
     }
+
     h1 {
-      font-size: 24px;
+      color: #4a4a4a;
       margin-bottom: 20px;
     }
+
+    .question-card {
+      font-size: 18px;
+      margin: 30px 0 20px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     input[type="text"] {
       width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      border: none;
-      border-radius: 8px;
+      padding: 10px;
       font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      text-align: center;
     }
+
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 10px 16px;
+      background-color: #007ACC;
+      color: white;
       border: none;
       border-radius: 8px;
-      background-color: #00c6ff;
-      color: white;
+      font-size: 16px;
       cursor: pointer;
+      margin: 6px;
+      transition: background-color 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    button:hover {
-      background-color: #0072ff;
+
+    button:hover:not(:disabled) {
+      background-color: #005fa3;
     }
-    .hidden {
+
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+
+    #hintBtn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      color: #555;
+      font-size: 22px;
+      border: none;
+      padding: 6px;
+    }
+
+    #hintBtn:hover {
+      color: #000;
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-style: italic;
+      color: #444;
+    }
+
+    #gameScreen {
       display: none;
+    }
+
+    #mainMenu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #startBtn {
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #28a745;
+    }
+
+    #startBtn:hover {
+      background-color: #1e7e34;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 id="soal">Selamat datang di Game TTS Interaktif!</h1>
-    <input type="text" id="jawaban" placeholder="Tulis jawabanmu di sini" class="hidden">
-    <button onclick="mulaiGame()" id="btnMulai">Mulai</button>
-    <button onclick="cekJawaban()" class="hidden" id="btnCek">Jawab</button>
-    <p id="feedback"></p>
+    <!-- Menu Utama -->
+    <div id="mainMenu">
+      <h1>Selamat Datang di Tebak Kata!</h1>
+      <p>Uji kemampuanmu menebak kata konkret!</p>
+      <button id="startBtn" onclick="startGame()"><i class="bi bi-play-circle"></i> Mulai Game</button>
+    </div>
+
+    <!-- Layar Game -->
+    <div id="gameScreen">
+      <button id="hintBtn" onclick="showHint()" title="Tampilkan Hint"><i class="bi bi-lightbulb"></i></button>
+      <h1>Tebak Kata</h1>
+      <div class="question-card" id="question">Memuat soal...</div>
+      <input type="text" id="answer" placeholder="Masukkan jawaban kamu...">
+      <br>
+      <button onclick="checkAnswer()" id="answerBtn"><i class="bi bi-check-circle"></i>Jawab</button>
+      <button onclick="skipQuestion()" id="skipBtn" disabled><i class="bi bi-skip-forward-circle"></i>Skip</button>
+      <div class="hint" id="hint"></div>
+    </div>
   </div>
 
   <script>
-    const soalList = [
-      "Guna Kata konkret dalam ranah bahasa adalah",
-      "Mengapa Kata konkret harus memiliki bentuk fisik?",
-      "Kaca merupakan Kata konkret bagian...",
-      "Kata konkret merupakan kata yang mencakup ciri khas yang dapat dilihat, didengar, dirasakan, dicium Dan dikecap, berdasarkan fakta yang tertera, Kata konkret memiliki wujud ..."
+    const originalQuestions = [
+      { question: "Guna Kata konkret dalam ranah bahasa adalah...", answer: "menggambarkan benda nyata", hint: "Untuk menjelaskan sesuatu yang bisa dilihat dan dirasakan" },
+      { question: "Mengapa Kata konkret harus memiliki bentuk fisik?", answer: "karena dapat diamati", hint: "Karena bisa dikenali oleh pancaindra" },
+      { question: "Kaca merupakan Kata konkret bagian...", answer: "penglihatan", hint: "Terkait dengan indera mata" },
+      { question: "Kata konkret mencakup ciri khas yang dapat dilihat, didengar, dirasakan, dicium dan dikecap. Maka kata konkret memiliki wujud...", answer: "nyata", hint: "Kebalikan dari abstrak" },
+      { question: "Lawan Kata konkret merupakan Kata...", answer: "abstrak", hint: "Bersifat tidak berwujud" },
+      { question: "\"Aku suka makan melon\". Kata konkret dalam kalimat tersebut adalah...", answer: "melon", hint: "Sesuatu yang bisa dimakan" }
     ];
 
-    const jawabanList = [
-      "mendeskripsikan objek nyata",
-      "agar dapat dibuktikan keberadaannya",
-      "benda",
-      "nyata"
-    ];
-
-    let indexSoal = 0;
-
-    function mulaiGame() {
-      document.getElementById('btnMulai').classList.add('hidden');
-      document.getElementById('jawaban').classList.remove('hidden');
-      document.getElementById('btnCek').classList.remove('hidden');
-      tampilkanSoal();
-    }
-
-    function tampilkanSoal() {
-      document.getElementById('soal').innerText = soalList[indexSoal];
-      document.getElementById('jawaban').value = '';
-      document.getElementById('feedback').innerText = '';
-    }
-
-    function cekJawaban() {
-      const input = document.getElementById('jawaban').value.toLowerCase().trim();
-      if (input === jawabanList[indexSoal]) {
-        indexSoal++;
-        if (indexSoal < soalList.length) {
-          tampilkanSoal();
-        } else {
-          document.getElementById('soal').innerText = 'Selamat! Kamu telah menyelesaikan semua rintangan!';
-          document.getElementById('jawaban').classList.add('hidden');
-          document.getElementById('btnCek').classList.add('hidden');
-        }
-      } else {
-        document.getElementById('feedback').innerText = 'Jawaban salah, coba lagi!';
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
+    }
+
+    let questions = [...originalQuestions];
+    shuffleArray(questions);
+
+    let current = 0;
+    let hintUsed = false;
+    let skipTimer;
+    let score = 0;
+    let skipped = new Set();
+
+    function startGame() {
+      document.getElementById("mainMenu").style.display = "none";
+      document.getElementById("gameScreen").style.display = "block";
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const questionCard = document.getElementById("question");
+      questionCard.classList.remove("question-card");
+      void questionCard.offsetWidth; // Trigger reflow
+      questionCard.classList.add("question-card");
+
+      questionCard.textContent = questions[current].question;
+      document.getElementById("answer").value = "";
+      document.getElementById("hint").textContent = "";
+      document.getElementById("hintBtn").disabled = false;
+      document.getElementById("skipBtn").disabled = true;
+
+      const answerBtn = document.getElementById("answerBtn");
+      answerBtn.style.backgroundColor = "#007ACC";
+
+      hintUsed = false;
+
+      clearTimeout(skipTimer);
+      skipTimer = setTimeout(() => {
+        document.getElementById("skipBtn").disabled = false;
+      }, 50000);
+    }
+
+    function similarity(a, b) {
+      let longer = a.length > b.length ? a : b;
+      let shorter = a.length > b.length ? b : a;
+      let longerLength = longer.length;
+      if (longerLength === 0) return 1.0;
+      return (longerLength - editDistance(longer, shorter)) / longerLength;
+    }
+
+    function editDistance(s1, s2) {
+      s1 = s1.toLowerCase();
+      s2 = s2.toLowerCase();
+      const costs = [];
+      for (let i = 0; i <= s1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= s2.length; j++) {
+          if (i === 0) costs[j] = j;
+          else if (j > 0) {
+            let newValue = costs[j - 1];
+            if (s1.charAt(i - 1) !== s2.charAt(j - 1))
+              newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+            costs[j - 1] = lastValue;
+            lastValue = newValue;
+          }
+        }
+        if (i > 0) costs[s2.length] = lastValue;
+      }
+      return costs[s2.length];
+    }
+
+    function checkAnswer() {
+      const userAnswer = document.getElementById("answer").value.trim().toLowerCase();
+      const correctAnswer = questions[current].answer.toLowerCase();
+      const answerBtn = document.getElementById("answerBtn");
+    
+      const sim = similarity(userAnswer, correctAnswer);
+    
+      if (sim >= 0.7) {
+        answerBtn.style.backgroundColor = "green";
+        if (!skipped.has(current)) score++;
+        nextQuestion();
+      } else {
+        answerBtn.style.backgroundColor = "red";
+      }
+    }
+
+    function showHint() {
+      if (!hintUsed) {
+        document.getElementById("hint").textContent = "Hint: " + questions[current].hint;
+        document.getElementById("hintBtn").disabled = true;
+        hintUsed = true;
+      }
+    }
+
+    function skipQuestion() {
+      skipped.add(current);
+      nextQuestion();
+    }
+
+    function nextQuestion() {
+      current++;
+      clearTimeout(skipTimer);
+      setTimeout(() => {
+        if (current < questions.length) {
+          loadQuestion();
+        } else {
+          document.getElementById("question").textContent = `Selesai! Skor kamu: ${score}/${questions.length}`;
+          document.getElementById("answer").style.display = "none";
+          document.getElementById("answerBtn").style.display = "none";
+          document.getElementById("hintBtn").style.display = "none";
+          document.getElementById("skipBtn").style.display = "none";
+          document.getElementById("hint").style.display = "none";
+          launchConfetti();
+        }
+      }, 1000);
+    }
+    
+    function launchConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    
+      const confetti = [];
+      const confettiCount = 150;
+    
+      for (let i = 0; i < confettiCount; i++) {
+        confetti.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          r: Math.random() * 6 + 4,
+          d: Math.random() * confettiCount,
+          color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+          tilt: Math.floor(Math.random() * 10) - 10,
+          tiltAngle: 0
+        });
+      }
+    
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confetti.forEach(c => {
+          ctx.beginPath();
+          ctx.lineWidth = c.r;
+          ctx.strokeStyle = c.color;
+          ctx.moveTo(c.x + c.tilt + c.r / 2, c.y);
+          ctx.lineTo(c.x + c.tilt, c.y + c.tilt + c.r / 2);
+          ctx.stroke();
+        });
+        update();
+      }
+    
+      function update() {
+        confetti.forEach(c => {
+          c.y += Math.cos(c.d) + 2;
+          c.tiltAngle += 0.1;
+          c.tilt = Math.sin(c.tiltAngle) * 15;
+          if (c.y > canvas.height) {
+            c.y = -10;
+            c.x = Math.random() * canvas.width;
+          }
+        });
+      }
+    
+      setInterval(draw, 20);
     }
   </script>
 </body>
